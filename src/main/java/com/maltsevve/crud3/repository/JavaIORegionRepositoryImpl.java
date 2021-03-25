@@ -14,9 +14,6 @@ public class JavaIORegionRepositoryImpl implements RegionRepository {
     private final static Connection CONNECTION = DataBaseConnector.getDataBaseConnector().getConnection();
     private final static RegionDirector REGION_DIRECTOR = new RegionDirector();
 
-    // Дважды в коде ниже ID объектам класса Region присваивается через сеттер, возможно builder реализован не правильно
-    // и в него следует добавить метод buildId.
-
     public JavaIORegionRepositoryImpl() {
 
     }
@@ -24,18 +21,26 @@ public class JavaIORegionRepositoryImpl implements RegionRepository {
     @Override
     public Region save(Region region) {
         createTable();
-        region.setId(generateID());
+        List<Region> regions = getAll();
+        Region region1 = regions.stream().filter((r) -> r.getName().
+                equals(region.getName())).findFirst().orElse(null);
 
-        try (PreparedStatement preparedStatement = CONNECTION.prepareStatement("INSERT INTO regions " +
-                "(RegionID, Region) VALUES (?, ?)")) {
-            preparedStatement.setLong(1, region.getId());
-            preparedStatement.setString(2, region.getName());
-            preparedStatement.executeUpdate();
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
+        if (region1 == null) {
+            region.setId(generateID());
+
+            try (PreparedStatement preparedStatement = CONNECTION.prepareStatement("INSERT INTO regions " +
+                    "(RegionID, Region) VALUES (?, ?)")) {
+                preparedStatement.setLong(1, region.getId());
+                preparedStatement.setString(2, region.getName());
+                preparedStatement.executeUpdate();
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
+            }
+
+            return region;
+        } else {
+            return region1;
         }
-
-        return region;
     }
 
     @Override
@@ -45,6 +50,7 @@ public class JavaIORegionRepositoryImpl implements RegionRepository {
 
         if (region1 == null) {
             System.out.println("Update is unavailable: no such ID in the data base.");
+            return region;
         } else {
             try (PreparedStatement preparedStatement = CONNECTION.prepareStatement("UPDATE regions SET Region = ?" +
                     "WHERE RegionID = ?")) {
@@ -54,9 +60,8 @@ public class JavaIORegionRepositoryImpl implements RegionRepository {
             } catch (SQLException throwables) {
                 throwables.printStackTrace();
             }
+            return region1;
         }
-
-        return region;
     }
 
     @Override
@@ -89,7 +94,7 @@ public class JavaIORegionRepositoryImpl implements RegionRepository {
                     FROM Regions
                     """);
             while (resultSet.next()) {
-                REGION_DIRECTOR.setRegionBuilder(new ActualRegionBuilder((resultSet.getString("Region"))));
+                REGION_DIRECTOR.setRegionBuilder(new ActualRegionBuilder(resultSet.getString("Region")));
                 Region region = REGION_DIRECTOR.buildRegion();
                 region.setId(resultSet.getLong("RegionID"));
                 regions.add(region);
@@ -140,8 +145,8 @@ public class JavaIORegionRepositoryImpl implements RegionRepository {
             statement.execute("""
                     CREATE TABLE IF NOT EXISTS Regions
                                         (
-                                        RegionID int,
-                                        Region varchar(255)
+                                        RegionID int        NOT NULL UNIQUE,
+                                        Region varchar(255) NOT NULL UNIQUE
                                         )
                     """);
         } catch (SQLException throwables) {

@@ -14,11 +14,15 @@ import java.util.Objects;
 public class JavaIOPostRepositoryImpl implements PostRepository {
     private final static Connection CONNECTION = DataBaseConnector.getDataBaseConnector().getConnection();
     private final static PostDirector POST_DIRECTOR = new PostDirector();
-
-    // Проблема со временем, возвращает только дату!!!
+    private static Long userId; /* Обязательно инициализировать через сеттер для использования методов save и update.
+                                   Создано для предотвращения создания Post без привязки к конкретному User.*/
 
     public JavaIOPostRepositoryImpl() {
 
+    }
+
+    public void setUserId(Long userId) {
+        JavaIOPostRepositoryImpl.userId = userId;
     }
 
     @Override
@@ -27,10 +31,11 @@ public class JavaIOPostRepositoryImpl implements PostRepository {
         post.setId(generateID());
 
         try (PreparedStatement preparedStatement = CONNECTION.prepareStatement("INSERT INTO posts" +
-                "(PostID, Content, Created) VALUES (?, ?, ?)")) {
+                "(PostID, Content, Created, UserID) VALUES (?, ?, ?, ?)")) {
             preparedStatement.setLong(1, post.getId());
             preparedStatement.setString(2, post.getContent());
             preparedStatement.setTimestamp(3, new Timestamp(new Date().getTime()));
+            preparedStatement.setLong(4, userId);
             preparedStatement.executeUpdate();
         } catch (SQLException throwables) {
             throwables.printStackTrace();
@@ -46,20 +51,21 @@ public class JavaIOPostRepositoryImpl implements PostRepository {
 
         if (post1 == null) {
             System.out.println("Update is unavailable: no such ID in the data base.");
+            return post;
         } else {
             try (PreparedStatement preparedStatement = CONNECTION.prepareStatement("UPDATE posts " +
-                    "SET Content = ?, Updated = ?" +
+                    "SET Content = ?, Updated = ?, UserID = ? " +
                     "WHERE PostID = ?")) {
                 preparedStatement.setString(1, post.getContent());
                 preparedStatement.setTimestamp(2, new Timestamp(new Date().getTime()));
-                preparedStatement.setLong(3, posts.indexOf(post1) + 1);
+                preparedStatement.setLong(3, userId);
+                preparedStatement.setLong(4, posts.indexOf(post1) + 1);
                 preparedStatement.executeUpdate();
             } catch (SQLException throwables) {
                 throwables.printStackTrace();
             }
+            return post1;
         }
-
-        return post;
     }
 
     @Override
@@ -94,7 +100,7 @@ public class JavaIOPostRepositoryImpl implements PostRepository {
                     FROM posts
                     """);
             while (resultSet.next()) {
-                POST_DIRECTOR.setPostBuilder(new ActualPostBuilder((resultSet.getString("Content"))));
+                POST_DIRECTOR.setPostBuilder(new ActualPostBuilder(resultSet.getString("Content")));
                 Post post = POST_DIRECTOR.buildPost();
                 post.setId(resultSet.getLong("PostID"));
                 post.setCreated(resultSet.getTimestamp("Created"));
@@ -140,15 +146,17 @@ public class JavaIOPostRepositoryImpl implements PostRepository {
         }
     }
 
+    // Для понимания какой именно User ответственнен за создание Post добавлен столбец UserID
     private void createTable() {
         try (Statement statement = CONNECTION.createStatement()) {
             statement.execute("""
                     CREATE TABLE IF NOT EXISTS Posts
                                         (
-                                        PostID int,
+                                        PostID int              NOT NULL UNIQUE,
                                         Content varchar(255),
-                                        Created date,
-                                        Updated date
+                                        Created timestamp       NOT NULL,
+                                        Updated timestamp,
+                                        UserID int              NOT NULL
                                         )
                     """);
         } catch (SQLException throwables) {

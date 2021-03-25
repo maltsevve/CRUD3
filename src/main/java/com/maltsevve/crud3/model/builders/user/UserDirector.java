@@ -15,6 +15,7 @@ public class UserDirector {
         userBuilder.buildLastName();
         userBuilder.buildPosts();
         userBuilder.buildRegion();
+        userBuilder.buildRole();
         return userBuilder.getUser();
     }
 }

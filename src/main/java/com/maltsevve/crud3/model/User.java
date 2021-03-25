@@ -15,4 +15,5 @@ public class User {
     private String lastName;
     private List<Post> posts;
     Region region;
+    Role role;
 }

@@ -25,6 +25,10 @@ public abstract class UserBuilder {
 
     }
 
+    public void buildRole() {
+
+    }
+
     public User getUser() {
         return user;
     }
