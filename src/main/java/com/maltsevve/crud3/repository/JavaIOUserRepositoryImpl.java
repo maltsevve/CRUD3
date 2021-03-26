@@ -1,21 +1,26 @@
 package com.maltsevve.crud3.repository;
 
 import com.maltsevve.crud3.SQL.DataBaseConnector;
+import com.maltsevve.crud3.model.Post;
 import com.maltsevve.crud3.model.Role;
 import com.maltsevve.crud3.model.User;
+import com.maltsevve.crud3.model.builders.post.ActualPostBuilder;
 import com.maltsevve.crud3.model.builders.user.ActualUserBuilder;
 import com.maltsevve.crud3.model.builders.user.UserDirector;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
+
+import static com.maltsevve.crud3.repository.JavaIOPostRepositoryImpl.POST_DIRECTOR;
 
 public class JavaIOUserRepositoryImpl implements UserRepository {
     private final static Connection CONNECTION = DataBaseConnector.getDataBaseConnector().getConnection();
     private final static UserDirector USER_DIRECTOR = new UserDirector();
 
-    JavaIOPostRepositoryImpl jpr = new JavaIOPostRepositoryImpl();
     JavaIORegionRepositoryImpl jrr = new JavaIORegionRepositoryImpl();
 
     public JavaIOUserRepositoryImpl() {
@@ -81,7 +86,7 @@ public class JavaIOUserRepositoryImpl implements UserRepository {
             ResultSet resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
                 USER_DIRECTOR.setUserBuilder(new ActualUserBuilder(resultSet.getString("FirstName"),
-                        resultSet.getString("LastName"), jpr.getAll(),
+                        resultSet.getString("LastName"), getUserPosts(aLong),
                         jrr.getById(resultSet.getLong("Region")),
                         Role.valueOf(resultSet.getString("Role"))));
                 user = USER_DIRECTOR.buildUser();
@@ -105,7 +110,7 @@ public class JavaIOUserRepositoryImpl implements UserRepository {
                     """);
             while (resultSet.next()) {
                 USER_DIRECTOR.setUserBuilder(new ActualUserBuilder(resultSet.getString("FirstName"),
-                        resultSet.getString("LastName"), jpr.getAll(),
+                        resultSet.getString("LastName"), getUserPosts(resultSet.getLong("UserID")),
                         jrr.getById(resultSet.getLong("Region")),
                         Role.valueOf(resultSet.getString("Role"))));
                 User user = USER_DIRECTOR.buildUser();
@@ -116,7 +121,7 @@ public class JavaIOUserRepositoryImpl implements UserRepository {
             throwables.printStackTrace();
         }
 
-        return users;
+        return users.stream().sorted(Comparator.comparing(User::getId)).collect(Collectors.toList());
     }
 
     @Override
@@ -166,5 +171,28 @@ public class JavaIOUserRepositoryImpl implements UserRepository {
         } catch (SQLException throwables) {
             throwables.printStackTrace();
         }
+    }
+
+    private List<Post> getUserPosts(Long userId) {
+        List<Post> posts = new ArrayList<>();
+
+        try (PreparedStatement preparedStatement = CONNECTION.prepareStatement("SELECT * FROM posts " +
+                "WHERE UserID = ?")) {
+            preparedStatement.setLong(1, userId);
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            while (resultSet.next()) {
+                POST_DIRECTOR.setPostBuilder(new ActualPostBuilder(resultSet.getString("Content")));
+                Post post = POST_DIRECTOR.buildPost();
+                post.setId(resultSet.getLong("PostID"));
+                post.setCreated(resultSet.getTimestamp("Created"));
+                post.setUpdated(resultSet.getTimestamp("Updated"));
+                posts.add(post);
+            }
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+
+        return posts.stream().sorted(Comparator.comparing(Post::getId)).collect(Collectors.toList());
     }
 }

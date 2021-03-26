@@ -6,22 +6,20 @@ import com.maltsevve.crud3.model.builders.post.ActualPostBuilder;
 import com.maltsevve.crud3.model.builders.post.PostDirector;
 
 import java.sql.*;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class JavaIOPostRepositoryImpl implements PostRepository {
     private final static Connection CONNECTION = DataBaseConnector.getDataBaseConnector().getConnection();
-    private final static PostDirector POST_DIRECTOR = new PostDirector();
-    private static Long userId; /* Обязательно инициализировать через сеттер для использования методов save и update.
-                                   Создано для предотвращения создания Post без привязки к конкретному User.*/
+    public final static PostDirector POST_DIRECTOR = new PostDirector();
+    private static Long userId;
 
     public JavaIOPostRepositoryImpl() {
 
     }
 
-    public void setUserId(Long userId) {
+    public static void setUserId(Long userId) {
         JavaIOPostRepositoryImpl.userId = userId;
     }
 
@@ -30,15 +28,20 @@ public class JavaIOPostRepositoryImpl implements PostRepository {
         createTable();
         post.setId(generateID());
 
-        try (PreparedStatement preparedStatement = CONNECTION.prepareStatement("INSERT INTO posts" +
-                "(PostID, Content, Created, UserID) VALUES (?, ?, ?, ?)")) {
-            preparedStatement.setLong(1, post.getId());
-            preparedStatement.setString(2, post.getContent());
-            preparedStatement.setTimestamp(3, new Timestamp(new Date().getTime()));
-            preparedStatement.setLong(4, userId);
-            preparedStatement.executeUpdate();
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
+        if (userId != null) {
+            try (PreparedStatement preparedStatement = CONNECTION.prepareStatement("INSERT INTO posts " +
+                    "(PostID, Content, Created, UserID) " +
+                    "VALUES (?, ?, ?, ?)")) {
+                preparedStatement.setLong(1, post.getId());
+                preparedStatement.setString(2, post.getContent());
+                preparedStatement.setTimestamp(3, new Timestamp(new Date().getTime()));
+                preparedStatement.setLong(4, userId);
+                preparedStatement.executeUpdate();
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
+            }
+        } else {
+            System.out.println("Please setup user ID.");
         }
 
         return post;
@@ -111,7 +114,7 @@ public class JavaIOPostRepositoryImpl implements PostRepository {
             throwables.printStackTrace();
         }
 
-        return posts;
+        return posts.stream().sorted(Comparator.comparing(Post::getId)).collect(Collectors.toList());
     }
 
     @Override
@@ -146,7 +149,6 @@ public class JavaIOPostRepositoryImpl implements PostRepository {
         }
     }
 
-    // Для понимания какой именно User ответственнен за создание Post добавлен столбец UserID
     private void createTable() {
         try (Statement statement = CONNECTION.createStatement()) {
             statement.execute("""

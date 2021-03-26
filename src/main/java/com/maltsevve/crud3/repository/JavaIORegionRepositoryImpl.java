@@ -7,8 +7,10 @@ import com.maltsevve.crud3.model.builders.region.RegionDirector;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class JavaIORegionRepositoryImpl implements RegionRepository {
     private final static Connection CONNECTION = DataBaseConnector.getDataBaseConnector().getConnection();
@@ -68,17 +70,19 @@ public class JavaIORegionRepositoryImpl implements RegionRepository {
     public Region getById(Long aLong) {
         Region region = null;
 
-        try (PreparedStatement preparedStatement = CONNECTION.prepareStatement("SELECT * FROM regions " +
-                "WHERE RegionID = ?")) {
-            preparedStatement.setLong(1, aLong);
-            ResultSet resultSet = preparedStatement.executeQuery();
-            while (resultSet.next()) {
-                REGION_DIRECTOR.setRegionBuilder(new ActualRegionBuilder((resultSet.getString("Region"))));
-                region = REGION_DIRECTOR.buildRegion();
-                region.setId(resultSet.getLong("RegionID"));
+        if (aLong > 0) {
+            try (PreparedStatement preparedStatement = CONNECTION.prepareStatement("SELECT * FROM regions " +
+                    "WHERE RegionID = ?")) {
+                preparedStatement.setLong(1, aLong);
+                ResultSet resultSet = preparedStatement.executeQuery();
+                while (resultSet.next()) {
+                    REGION_DIRECTOR.setRegionBuilder(new ActualRegionBuilder((resultSet.getString("Region"))));
+                    region = REGION_DIRECTOR.buildRegion();
+                    region.setId(resultSet.getLong("RegionID"));
+                }
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
             }
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
         }
 
         return region;
@@ -103,7 +107,7 @@ public class JavaIORegionRepositoryImpl implements RegionRepository {
             throwables.printStackTrace();
         }
 
-        return regions;
+        return regions.stream().sorted(Comparator.comparing(Region::getId)).collect(Collectors.toList());
     }
 
     @Override
