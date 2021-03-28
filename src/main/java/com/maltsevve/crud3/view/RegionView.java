@@ -14,14 +14,15 @@ public class RegionView {
     private final RegionDirector regionDirector = new RegionDirector();
 
     private void regionMenu() {
-        System.out.println("'REGIONS'\n" +
-                "Select menu item:\n" +
-                "1 - Save\n" +
-                "2 - Update\n" +
-                "3 - Get by ID\n" +
-                "4 - Get all\n" +
-                "5 - Delete\n" +
-                "6 - Return");
+        System.out.println("""
+                'REGIONS'
+                Select menu item:
+                1 - Save
+                2 - Update
+                3 - Get by ID
+                4 - Get all
+                5 - Delete
+                6 - Return""");
     }
 
     public void logic() {
@@ -34,9 +35,14 @@ public class RegionView {
                     System.out.println("Input region name: ");
                     input = ClientInput.getScanner().nextLine();
 
-                    regionDirector.setRegionBuilder(new ActualRegionBuilder(input));
-                    regionController.save(regionDirector.buildRegion());
-                    System.out.println();
+                    if (input.matches("^([A-zА-яё]+)([\\s-]?[A-zА-яё])*$")) {
+                        regionDirector.setRegionBuilder(new ActualRegionBuilder(input));
+                        regionController.save(regionDirector.buildRegion());
+                        System.out.println();
+                    } else {
+                        System.out.println("Region name can only contain the letters A-z/A-z" +
+                                " and the characters: 'space' and '-'\n");
+                    }
 
                     logic();
                 }
@@ -68,7 +74,8 @@ public class RegionView {
                             System.out.println("No region with specified ID in the data base.\n");
                         }
                     } else {
-                        System.out.println("Invalid input format.\n");
+                        System.out.println("Region name can only contain the letters A-z/A-z" +
+                                " and the characters: 'space' and '-'\n");
                     }
 
                     logic();
@@ -115,16 +122,20 @@ public class RegionView {
 
                     if (input.matches("\\d+")) {
                         Long id = Long.parseLong(input);
+                        Region region;
 
-                        if (id > 0 && regionController.getById(id) != null) {
+                        if (id > 0 && (region = regionController.getById(id)) != null) {
                             regionController.deleteById(id);
-                            System.out.println();
+                            System.out.println("Region with id " + region.getId() + " and name " + region.getName() +
+                                    " deleted from table.");
                         } else {
-                            System.out.println("No such region in the data base.\n");
+                            System.out.println("No such region in the data base.");
                         }
                     } else {
                         System.out.println("Invalid ID.");
                     }
+
+                    System.out.println();
 
                     logic();
                 }

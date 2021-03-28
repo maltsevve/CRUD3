@@ -57,7 +57,7 @@ public class JavaIORegionRepositoryImpl implements RegionRepository {
             try (PreparedStatement preparedStatement = CONNECTION.prepareStatement("UPDATE regions SET Region = ?" +
                     "WHERE RegionID = ?")) {
                 preparedStatement.setString(1, region.getName());
-                preparedStatement.setLong(2, regions.indexOf(region1) + 1);
+                preparedStatement.setLong(2, region.getId());
                 preparedStatement.executeUpdate();
             } catch (SQLException throwables) {
                 throwables.printStackTrace();

@@ -65,7 +65,7 @@ public class JavaIOUserRepositoryImpl implements UserRepository {
                 preparedStatement.setString(2, user.getLastName());
                 preparedStatement.setLong(3, user.getRegion().getId());
                 preparedStatement.setString(4, String.valueOf(user.getRole()));
-                preparedStatement.setLong(5, users.indexOf(user1) + 1);
+                preparedStatement.setLong(5, user.getId());
                 preparedStatement.executeUpdate();
 
                 jrr.save(user.getRegion());

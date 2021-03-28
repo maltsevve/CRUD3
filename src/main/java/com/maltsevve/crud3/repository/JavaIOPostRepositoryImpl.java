@@ -62,7 +62,7 @@ public class JavaIOPostRepositoryImpl implements PostRepository {
                 preparedStatement.setString(1, post.getContent());
                 preparedStatement.setTimestamp(2, new Timestamp(new Date().getTime()));
                 preparedStatement.setLong(3, userId);
-                preparedStatement.setLong(4, posts.indexOf(post1) + 1);
+                preparedStatement.setLong(4, post.getId());
                 preparedStatement.executeUpdate();
             } catch (SQLException throwables) {
                 throwables.printStackTrace();

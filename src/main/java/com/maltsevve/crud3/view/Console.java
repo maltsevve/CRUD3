@@ -18,7 +18,7 @@ public class Console {
                 case 1 -> userView.logic();
                 case 2 -> postView.logic();
                 case 3 -> regionView.logic();
-                case 4 -> {ClientInput.getScanner().close();}
+                case 4 -> ClientInput.getScanner().close();
                 default -> {
                     System.out.println("Non-existent menu item. Try again.\n");
                     showMainMenu();
@@ -31,11 +31,12 @@ public class Console {
     }
 
     public static void showMainMenu() {
-        System.out.println("'MENU'\n" +
-                "Select menu item:\n" +
-                "1 - Users\n" +
-                "2 - Posts\n" +
-                "3 - Regions\n" +
-                "4 - Exit");
+        System.out.println("""
+                'MENU'
+                Select menu item:
+                1 - Users
+                2 - Posts
+                3 - Regions
+                4 - Exit""");
     }
 }
