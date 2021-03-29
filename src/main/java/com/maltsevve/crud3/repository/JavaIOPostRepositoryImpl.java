@@ -6,8 +6,10 @@ import com.maltsevve.crud3.model.builders.post.ActualPostBuilder;
 import com.maltsevve.crud3.model.builders.post.PostDirector;
 
 import java.sql.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class JavaIOPostRepositoryImpl implements PostRepository {
@@ -25,17 +27,13 @@ public class JavaIOPostRepositoryImpl implements PostRepository {
 
     @Override
     public Post save(Post post) {
-        createTable();
-        post.setId(generateID());
-
         if (userId != null) {
             try (PreparedStatement preparedStatement = CONNECTION.prepareStatement("INSERT INTO posts " +
-                    "(PostID, Content, Created, UserID) " +
-                    "VALUES (?, ?, ?, ?)")) {
-                preparedStatement.setLong(1, post.getId());
-                preparedStatement.setString(2, post.getContent());
-                preparedStatement.setTimestamp(3, new Timestamp(new Date().getTime()));
-                preparedStatement.setLong(4, userId);
+                    "(Content, Created, UserID) " +
+                    "VALUES (?, ?, ?)")) {
+                preparedStatement.setString(1, post.getContent());
+                preparedStatement.setTimestamp(2, new Timestamp(new Date().getTime()));
+                preparedStatement.setLong(3, userId);
                 preparedStatement.executeUpdate();
             } catch (SQLException throwables) {
                 throwables.printStackTrace();
@@ -123,44 +121,6 @@ public class JavaIOPostRepositoryImpl implements PostRepository {
                 "WHERE PostID = ?")) {
             preparedStatement.setLong(1, aLong);
             preparedStatement.executeUpdate();
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
-        }
-    }
-
-    private Long generateID() {
-        List<Long> id = new ArrayList<>();
-        try (Statement statement = CONNECTION.createStatement()) {
-            ResultSet resultSet = statement.executeQuery("""
-                    SELECT PostID
-                    FROM Posts
-                    """);
-            while (resultSet.next()) {
-                id.add(resultSet.getLong("PostID"));
-            }
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
-        }
-
-        if (!id.isEmpty()) {
-            return Objects.requireNonNull(id.stream().max(Long::compare).orElse(null)) + 1;
-        } else {
-            return 1L;
-        }
-    }
-
-    private void createTable() {
-        try (Statement statement = CONNECTION.createStatement()) {
-            statement.execute("""
-                    CREATE TABLE IF NOT EXISTS Posts
-                                        (
-                                        PostID int              NOT NULL UNIQUE,
-                                        Content varchar(255),
-                                        Created timestamp       NOT NULL,
-                                        Updated timestamp,
-                                        UserID int              NOT NULL
-                                        )
-                    """);
         } catch (SQLException throwables) {
             throwables.printStackTrace();
         }

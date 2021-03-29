@@ -9,7 +9,6 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class JavaIORegionRepositoryImpl implements RegionRepository {
@@ -22,18 +21,14 @@ public class JavaIORegionRepositoryImpl implements RegionRepository {
 
     @Override
     public Region save(Region region) {
-        createTable();
         List<Region> regions = getAll();
         Region region1 = regions.stream().filter((r) -> r.getName().
                 equals(region.getName())).findFirst().orElse(null);
 
         if (region1 == null) {
-            region.setId(generateID());
-
             try (PreparedStatement preparedStatement = CONNECTION.prepareStatement("INSERT INTO regions " +
-                    "(RegionID, Region) VALUES (?, ?)")) {
-                preparedStatement.setLong(1, region.getId());
-                preparedStatement.setString(2, region.getName());
+                    "(Region) VALUES (?)")) {
+                preparedStatement.setString(1, region.getName());
                 preparedStatement.executeUpdate();
             } catch (SQLException throwables) {
                 throwables.printStackTrace();
@@ -116,43 +111,6 @@ public class JavaIORegionRepositoryImpl implements RegionRepository {
                 "WHERE RegionID = ?")) {
             preparedStatement.setLong(1, aLong);
             preparedStatement.executeUpdate();
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
-        }
-    }
-
-    private Long generateID() {
-        List<Long> id = new ArrayList<>();
-
-        try (Statement statement = CONNECTION.createStatement()) {
-            ResultSet resultSet = statement.executeQuery("""
-                    SELECT RegionID
-                    FROM Regions
-                    """);
-            while (resultSet.next()) {
-                id.add(resultSet.getLong("RegionID"));
-            }
-
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
-        }
-
-        if (!id.isEmpty()) {
-            return Objects.requireNonNull(id.stream().max(Long::compare).orElse(null)) + 1;
-        } else {
-            return 1L;
-        }
-    }
-
-    private void createTable() {
-        try (Statement statement = CONNECTION.createStatement()) {
-            statement.execute("""
-                    CREATE TABLE IF NOT EXISTS Regions
-                                        (
-                                        RegionID int        NOT NULL UNIQUE,
-                                        Region varchar(255) NOT NULL UNIQUE
-                                        )
-                    """);
         } catch (SQLException throwables) {
             throwables.printStackTrace();
         }

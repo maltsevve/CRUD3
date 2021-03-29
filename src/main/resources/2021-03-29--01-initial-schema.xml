@@ -1,0 +1,58 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd
+        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+    <changeSet id="1" author="maltsevve" runOnChange="true">
+        <createTable tableName="regions">
+            <column  name="RegionID" type="int" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="Region" type="text">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="2" author="maltsevve" runOnChange="true">
+        <createTable tableName="posts">
+            <column  name="PostID" type="int" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="Content" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="Created" type="timestamp" autoIncrement="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="Updated" type="timestamp" autoIncrement="false">
+                <constraints nullable="true"/>
+            </column>
+            <column name="UserID" type="int">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="3" author="maltsevve" runOnChange="true">
+        <createTable tableName="users">
+            <column  name="UserID" type="int" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="FirstName" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="LastName" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="RegionID" type="int" autoIncrement="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="Role" type="varchar(255)" autoIncrement="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+</databaseChangeLog>

@@ -12,7 +12,6 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.maltsevve.crud3.repository.JavaIOPostRepositoryImpl.POST_DIRECTOR;
@@ -29,16 +28,12 @@ public class JavaIOUserRepositoryImpl implements UserRepository {
 
     @Override
     public User save(User user) {
-        createTable();
-        user.setId(generateID());
-
         try (PreparedStatement preparedStatement = CONNECTION.prepareStatement("INSERT INTO users" +
-                "(UserID, FirstName, LastName, Region, Role) VALUES (?, ?, ?, ?, ?)")) {
-            preparedStatement.setLong(1, user.getId());
-            preparedStatement.setString(2, user.getFirstName());
-            preparedStatement.setString(3, user.getLastName());
-            preparedStatement.setLong(4, user.getRegion().getId());
-            preparedStatement.setString(5, String.valueOf(user.getRole()));
+                "(FirstName, LastName, RegionID, Role) VALUES (?, ?, ?, ?)")) {
+            preparedStatement.setString(1, user.getFirstName());
+            preparedStatement.setString(2, user.getLastName());
+            preparedStatement.setLong(3, user.getRegion().getId());
+            preparedStatement.setString(4, String.valueOf(user.getRole()));
             preparedStatement.executeUpdate();
 
             jrr.save(user.getRegion());
@@ -59,7 +54,7 @@ public class JavaIOUserRepositoryImpl implements UserRepository {
             return user;
         } else {
             try (PreparedStatement preparedStatement = CONNECTION.prepareStatement("UPDATE users " +
-                    "SET FirstName = ?, LastName = ?, Region = ?, Role = ? " +
+                    "SET FirstName = ?, LastName = ?, RegionID = ?, Role = ? " +
                     "WHERE UserID = ?")) {
                 preparedStatement.setString(1, user.getFirstName());
                 preparedStatement.setString(2, user.getLastName());
@@ -87,7 +82,7 @@ public class JavaIOUserRepositoryImpl implements UserRepository {
             while (resultSet.next()) {
                 USER_DIRECTOR.setUserBuilder(new ActualUserBuilder(resultSet.getString("FirstName"),
                         resultSet.getString("LastName"), getUserPosts(aLong),
-                        jrr.getById(resultSet.getLong("Region")),
+                        jrr.getById(resultSet.getLong("RegionID")),
                         Role.valueOf(resultSet.getString("Role"))));
                 user = USER_DIRECTOR.buildUser();
                 user.setId(resultSet.getLong("UserID"));
@@ -111,7 +106,7 @@ public class JavaIOUserRepositoryImpl implements UserRepository {
             while (resultSet.next()) {
                 USER_DIRECTOR.setUserBuilder(new ActualUserBuilder(resultSet.getString("FirstName"),
                         resultSet.getString("LastName"), getUserPosts(resultSet.getLong("UserID")),
-                        jrr.getById(resultSet.getLong("Region")),
+                        jrr.getById(resultSet.getLong("RegionID")),
                         Role.valueOf(resultSet.getString("Role"))));
                 User user = USER_DIRECTOR.buildUser();
                 user.setId(resultSet.getLong("UserID"));
@@ -130,44 +125,6 @@ public class JavaIOUserRepositoryImpl implements UserRepository {
                 "WHERE UserID = ?")) {
             preparedStatement.setLong(1, aLong);
             preparedStatement.executeUpdate();
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
-        }
-    }
-
-    private Long generateID() {
-        List<Long> id = new ArrayList<>();
-        try (Statement statement = CONNECTION.createStatement()) {
-            ResultSet resultSet = statement.executeQuery("""
-                    SELECT UserID
-                    FROM users
-                    """);
-            while (resultSet.next()) {
-                id.add(resultSet.getLong("UserID"));
-            }
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
-        }
-
-        if (!id.isEmpty()) {
-            return Objects.requireNonNull(id.stream().max(Long::compare).orElse(null)) + 1;
-        } else {
-            return 1L;
-        }
-    }
-
-    private void createTable() {
-        try (Statement statement = CONNECTION.createStatement()) {
-            statement.execute("""
-                    CREATE TABLE IF NOT EXISTS Users
-                                        (
-                                        UserID int              NOT NULL UNIQUE,
-                                        FirstName varchar(255),
-                                        LastName varchar(255),
-                                        Region int              NOT NULL,
-                                        Role varchar(255)       NOT NULL 
-                                        )
-                    """);
         } catch (SQLException throwables) {
             throwables.printStackTrace();
         }
