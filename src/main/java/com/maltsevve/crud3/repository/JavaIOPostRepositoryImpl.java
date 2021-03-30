@@ -117,12 +117,16 @@ public class JavaIOPostRepositoryImpl implements PostRepository {
 
     @Override
     public void deleteById(Long aLong) {
-        try (PreparedStatement preparedStatement = CONNECTION.prepareStatement("DELETE FROM posts " +
-                "WHERE PostID = ?")) {
-            preparedStatement.setLong(1, aLong);
-            preparedStatement.executeUpdate();
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
+        if (userId != 3) {
+            try (PreparedStatement preparedStatement = CONNECTION.prepareStatement("DELETE FROM posts " +
+                    "WHERE PostID = ?")) {
+                preparedStatement.setLong(1, aLong);
+                preparedStatement.executeUpdate();
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
+            }
+        } else {
+            System.out.println("Only administrators and moderators can delete posts.");
         }
     }
 }
