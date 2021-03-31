@@ -14,25 +14,26 @@ import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class RegionServiceTest {
+    Region region = new Region();
+
     @Mock
     RegionService regionService = mock(RegionService.class);
-    Region region = new Region();
 
     @Test
     public void saveTest() {
         region.setName("Rostov");
-        when(regionService.save(region)).thenReturn(region);
+        lenient().when(regionService.save(region)).thenReturn(region);
     }
 
     @Test
     public void updateTest() {
-        when(regionService.update(region)).thenReturn(region);
+        lenient().when(regionService.update(region)).thenReturn(region);
     }
 
     @Test
     public void getByIdTest() {
         region.setId(1L);
-        when(regionService.getById(1L)).thenReturn(region);
+        lenient().when(regionService.getById(1L)).thenReturn(region);
     }
 
     @Test
@@ -40,7 +41,7 @@ public class RegionServiceTest {
         List<Region> regions = new ArrayList<>();
         region.setId(1L);
         regions.add(region);
-        when(regionService.getAll()).thenReturn(regions);
+        lenient().when(regionService.getAll()).thenReturn(regions);
     }
 
     @Test
